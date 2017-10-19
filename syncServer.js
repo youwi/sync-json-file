@@ -8,7 +8,6 @@ var path=require('path');
 
 var server = http.createServer(function (request, response) {
 
-
     if(request.method=="GET"){
         doGET(request, response)
     }else if(request.method=="POST"){
