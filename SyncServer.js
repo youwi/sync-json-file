@@ -14,7 +14,6 @@ var server = http.createServer(function (request, response) {
         doPOST(request, response)
     }
 
-
 });
 server.listen(PORT);
 console.log("Server runing at port: " + PORT + ".");
