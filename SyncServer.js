@@ -79,9 +79,19 @@ function doPOST(request, response){
         }
         var ori= fs.readFileSync(realPath+".json")
         var oriObject=JSON.parse(ori)
-        var newObject=JSON.parse(post)
+        try{
+            var newObject=JSON.parse(post)
+        }catch(e){
+            console.log(e)
+            console.log("maybe not json")
+            newObject={}
+        }
         var mergeObject=Object.assign(oriObject,newObject)
-        fs.writeFileSync(realPath+".json",JSON.stringify(mergeObject))
+        try{
+            fs.writeFileSync(realPath+".json",JSON.stringify(mergeObject))
+        }catch (e){
+            console.log(e)
+        }
         response.writeHead(200, {
             'Content-Type': "application/json"
         });
