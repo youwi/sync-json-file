@@ -4,10 +4,16 @@
    POST接收一个json,接口负责合并所有json,每次GET,返回全部JSON,json保存为文件.
 
 ### 为何不用moongo等数据库呢
-   制度问题,申请资源好麻烦.
+   
+   减少占用资源
+   超级轻量级,一个脚本可用.
 
 #### 为了方便js代码直接调用
 
+### 原则
+    一个脚本解决问题,不依赖除任何服务
+
+### 说明
 运行
 
     node SyncSever.js
@@ -17,10 +23,12 @@
 使用说明
 
         GET /abc  => {}  or 404
-        POST /abc {a:1} =>{a:1}
-        POST /abc {b:1} =>{a:1,b:1}
-        POST /abc {c:1} =>{a:1,b:1,c:1}
-        POST /abc {c:1} =>{a:1,b:1,c:1}
+        POST /abc {a:1} ==>{a:1}
+        POST /abc {b:1} ==>{a:1,b:1}
+        POST /abc {c:1} ==>{a:1,b:1,c:1}
+        POST /abc {c:1} ==>{a:1,b:1,c:1}
+        DELETE /abc {c:1} ==>{a:1,b:1}
+
         
 以路径为一个存储结构!
 
