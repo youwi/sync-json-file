@@ -52,3 +52,20 @@ fetch("http://127.0.0.1:8101/abc", {
     console.log(text)
     assert.equal(text,"{\"a\":1,\"b\":2}")
   })
+
+
+//
+// arrayToDict([{id:1},{id:2},{id:3},{id:4}],"id")
+//
+// deleteObject([{id:1},{id:2},{id:3},{id:4}],[ {id:1}])
+
+
+//
+// var CA = 0
+// for (var i = 0; i < 100; i++) {
+//   setInterval(() => {
+//     saveData("abc.json", CA + "")
+//     saveData("abcd.json", CA + "")
+//     CA++
+//   }, 100 + i)
+// }
