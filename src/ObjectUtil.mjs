@@ -2,6 +2,9 @@
  * 判断对象是否相等
  */
 import * as fs from "fs";
+import deepmerge_1 from "deepmerge";
+//import  {deepmerge} from "./MergeDeep"
+//import deepmerge_1 from "deepmerge"
 
 export function isEqualObject(ori, obj) {
   return JSON.stringify(ori) === JSON.stringify(obj);
@@ -24,6 +27,31 @@ const SAVE_DATA_TASK_LIST = [
   //	timeAt:null
   // }
 ]
+
+/**
+ * 合并大json,要注意去重,去重之后还要保持有序.
+ * @param oriObject
+ * @param newObject
+ * @return {*}
+ */
+export function  mergeBigObject(oriObject,newObject){
+  return  deepmerge_1(oriObject, newObject,{
+    arrayMerge:arrayMerge
+  })
+}
+
+/**
+ * 插入过程中要保持有序
+ * [1,2,   ,4,5] + [1,2,3]  ==>[1,2,3,4,5]
+ */
+export function arrayMerge(target, source, options) {
+  let dict1=arrayToDict(target,"id");
+  let dict2=arrayToDict(source,"id");
+  if(dict1['undefined']) return target.concat(source)
+  let dict3=Object.assign(dict1,dict2)
+  return dictToArray(dict3)
+}
+
 
 /**
  * 每5秒执行一次保存任务

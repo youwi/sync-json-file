@@ -3,9 +3,99 @@ import { join, extname } from 'path';
 import { parse } from 'url';
 import { createServer } from 'http';
 
+var isMergeableObject = function isMergeableObject(value) {
+	return isNonNullObject(value)
+		&& !isSpecial(value)
+};
+
+function isNonNullObject(value) {
+	return !!value && typeof value === 'object'
+}
+
+function isSpecial(value) {
+	var stringValue = Object.prototype.toString.call(value);
+
+	return stringValue === '[object RegExp]'
+		|| stringValue === '[object Date]'
+		|| isReactElement(value)
+}
+
+// see https://github.com/facebook/react/blob/b5ac963fb791d1298e7f396236383bc955f916c1/src/isomorphic/classic/element/ReactElement.js#L21-L25
+var canUseSymbol = typeof Symbol === 'function' && Symbol.for;
+var REACT_ELEMENT_TYPE = canUseSymbol ? Symbol.for('react.element') : 0xeac7;
+
+function isReactElement(value) {
+	return value.$$typeof === REACT_ELEMENT_TYPE
+}
+
+function emptyTarget(val) {
+	return Array.isArray(val) ? [] : {}
+}
+
+function cloneUnlessOtherwiseSpecified(value, options) {
+	return (options.clone !== false && options.isMergeableObject(value))
+		? deepmerge(emptyTarget(value), value, options)
+		: value
+}
+
+function defaultArrayMerge(target, source, options) {
+	return target.concat(source).map(function(element) {
+		return cloneUnlessOtherwiseSpecified(element, options)
+	})
+}
+
+function mergeObject(target, source, options) {
+	var destination = {};
+	if (options.isMergeableObject(target)) {
+		Object.keys(target).forEach(function(key) {
+			destination[key] = cloneUnlessOtherwiseSpecified(target[key], options);
+		});
+	}
+	Object.keys(source).forEach(function(key) {
+		if (!options.isMergeableObject(source[key]) || !target[key]) {
+			destination[key] = cloneUnlessOtherwiseSpecified(source[key], options);
+		} else {
+			destination[key] = deepmerge(target[key], source[key], options);
+		}
+	});
+	return destination
+}
+
+function deepmerge(target, source, options) {
+	options = options || {};
+	options.arrayMerge = options.arrayMerge || defaultArrayMerge;
+	options.isMergeableObject = options.isMergeableObject || isMergeableObject;
+
+	var sourceIsArray = Array.isArray(source);
+	var targetIsArray = Array.isArray(target);
+	var sourceAndTargetTypesMatch = sourceIsArray === targetIsArray;
+
+	if (!sourceAndTargetTypesMatch) {
+		return cloneUnlessOtherwiseSpecified(source, options)
+	} else if (sourceIsArray) {
+		return options.arrayMerge(target, source, options)
+	} else {
+		return mergeObject(target, source, options)
+	}
+}
+
+deepmerge.all = function deepmergeAll(array, options) {
+	if (!Array.isArray(array)) {
+		throw new Error('first argument should be an array')
+	}
+
+	return array.reduce(function(prev, next) {
+		return deepmerge(prev, next, options)
+	}, {})
+};
+
+var deepmerge_1 = deepmerge;
+
 /**
  * 判断对象是否相等
  */
+//import  {deepmerge} from "./MergeDeep"
+//import deepmerge_1 from "deepmerge"
 
 function isEqualObject(ori, obj) {
   return JSON.stringify(ori) === JSON.stringify(obj);
@@ -19,6 +109,31 @@ const SAVE_DATA_TASK_LIST = [
   //	timeAt:null
   // }
 ];
+
+/**
+ * 合并大json,要注意去重,去重之后还要保持有序.
+ * @param oriObject
+ * @param newObject
+ * @return {*}
+ */
+function  mergeBigObject(oriObject,newObject){
+  return  deepmerge_1(oriObject, newObject,{
+    arrayMerge:arrayMerge
+  })
+}
+
+/**
+ * 插入过程中要保持有序
+ * [1,2,   ,4,5] + [1,2,3]  ==>[1,2,3,4,5]
+ */
+function arrayMerge(target, source, options) {
+  let dict1=arrayToDict(target,"id");
+  let dict2=arrayToDict(source,"id");
+  if(dict1['undefined']) return target.concat(source)
+  let dict3=Object.assign(dict1,dict2);
+  return dictToArray(dict3)
+}
+
 
 /**
  * 每5秒执行一次保存任务
@@ -77,107 +192,38 @@ function formatDateTime(inputTime) {
   minute = minute < 10 ? ('0' + minute) : minute;
   second = second < 10 ? ('0' + second) : second;
   return y + '-' + m + '-' + d + ' ' + h + ':' + minute + ':' + second + "." + msecond;
+}/**
+ * build dict for array
+ * exmple
+ * [{id:1},{id:2},{id:3},{id:4}]==>{1:{id:1},2:{id:2},3:{id:3},4:{id:4}}
+ * @param {array} array
+ * @param {string} name
+ */
+function arrayToDict(array, name) {
+  let out = {};
+  array.map(item => {
+    out[item[name]] = item;
+  });
+  return out
 }
 
 /**
- * https://github.com/KyleAMathews/deepmerge
- * @param value
- * @return {*|boolean}
+ * {1:{id:1},2:{id:2},3:{id:3},4:{id:4}}==>[{id:1},{id:2},{id:3},{id:4}]
+ * @param {*} object
+ * @param {*} name
  */
-
-var isMergeableObject$1 = function isMergeableObject(value) {
-	return isNonNullObject$1(value)
-		&& !isSpecial$1(value)
-};
-
-function isNonNullObject$1(value) {
-	return !!value && typeof value === 'object'
+function dictToArray(object, name) {
+  // arrayToDict([{id:1},{id:2},{id:3},{id:4}],"id")
+  //  Object.values({1:{id:1},2:{id:2},3:{id:3},4:{id:4}})
+  return Object.values(object)
 }
-
-function isSpecial$1(value) {
-	var stringValue = Object.prototype.toString.call(value);
-
-	return stringValue === '[object RegExp]'
-		|| stringValue === '[object Date]'
-		|| isReactElement$1(value)
-}
-
-// see https://github.com/facebook/react/blob/b5ac963fb791d1298e7f396236383bc955f916c1/src/isomorphic/classic/element/ReactElement.js#L21-L25
-var canUseSymbol$1 = typeof Symbol === 'function' && Symbol.for;
-var REACT_ELEMENT_TYPE$1 = canUseSymbol$1 ? Symbol.for('react.element') : 0xeac7;
-
-function isReactElement$1(value) {
-	return value.$$typeof === REACT_ELEMENT_TYPE$1
-}
-
-function emptyTarget$1(val) {
-	return Array.isArray(val) ? [] : {}
-}
-
-function cloneUnlessOtherwiseSpecified$1(value, options) {
-	return (options.clone !== false && options.isMergeableObject(value))
-		? deepmerge$1(emptyTarget$1(value), value, options)
-		: value
-}
-
-function defaultArrayMerge$1(target, source, options) {
-	return target.concat(source).map(function(element) {
-		return cloneUnlessOtherwiseSpecified$1(element, options)
-	})
-}
-
-function mergeObject$2(target, source, options) {
-	var destination = {};
-	if (options.isMergeableObject(target)) {
-		Object.keys(target).forEach(function(key) {
-			destination[key] = cloneUnlessOtherwiseSpecified$1(target[key], options);
-		});
-	}
-	Object.keys(source).forEach(function(key) {
-		if (!options.isMergeableObject(source[key]) || !target[key]) {
-			destination[key] = cloneUnlessOtherwiseSpecified$1(source[key], options);
-		} else {
-			destination[key] = deepmerge$1(target[key], source[key], options);
-		}
-	});
-	return destination
-}
-
-function deepmerge$1(target, source, options) {
-	options = options || {};
-	options.arrayMerge = options.arrayMerge || defaultArrayMerge$1;
-	options.isMergeableObject = options.isMergeableObject || isMergeableObject$1;
-
-	var sourceIsArray = Array.isArray(source);
-	var targetIsArray = Array.isArray(target);
-	var sourceAndTargetTypesMatch = sourceIsArray === targetIsArray;
-
-	if (!sourceAndTargetTypesMatch) {
-		return cloneUnlessOtherwiseSpecified$1(source, options)
-	} else if (sourceIsArray) {
-		return options.arrayMerge(target, source, options)
-	} else {
-		return mergeObject$2(target, source, options)
-	}
-}
-
-deepmerge$1.all = function deepmergeAll(array, options) {
-	if (!Array.isArray(array)) {
-		throw new Error('first argument should be an array')
-	}
-
-	return array.reduce(function(prev, next) {
-		return deepmerge$1(prev, next, options)
-	}, {})
-};
-
-var deepmerge_1 = deepmerge$1;
 
 /**
  * GET请求直接返回文件
  * @param request
  * @param response
  */
+// 竟然 名称来有后缀!!
 
 const MIME = {
   "css": "text/css",
@@ -218,7 +264,7 @@ function doGET(request, response) {
           response.writeHead(500, {
             'Content-Type': 'text/plain'
           });
-          response.end(err);
+          response.end("");
         } else {
           let ext = extname(realPath);
           ext = ext ? ext.slice(1) : 'json';
@@ -279,14 +325,14 @@ function doPOST(request, response) {
     }
     // 注意  Object.assign([1,2],[3,4])  ==>[3,4]不能合并
     // let mergeObject = Object.assign(oriObject, newObject)
-    let mergeObject$$1 = deepmerge_1(oriObject, newObject);
+    let mergeObject = mergeBigObject(oriObject, newObject);
     //deepmerge_1({},{})
     try {
       //缓存下来.
       //需要优化,降低文件写入
-      MEM_OBJECTS[realPath] = mergeObject$$1;
-      if (!isEqualObject(backObject, mergeObject$$1)) {
-        saveData(realPath + ".json", JSON.stringify(mergeObject$$1));
+      MEM_OBJECTS[realPath] = mergeObject;
+      if (!isEqualObject(backObject, mergeObject)) {
+        saveData(realPath + ".json", JSON.stringify(mergeObject));
         // fs.writeFile(realPath + ".json", JSON.stringify(mergeObject), (err) => {
         //   console.log(err)
         // })
@@ -297,7 +343,7 @@ function doPOST(request, response) {
     response.writeHead(200, {
       'Content-Type': "application/json"
     });
-    response.write(JSON.stringify(mergeObject$$1), "binary");
+    response.write(JSON.stringify(mergeObject), "binary");
     response.end();
   });
 }

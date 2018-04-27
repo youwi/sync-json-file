@@ -8,8 +8,7 @@ import * as url from "url";
 import * as fs from "fs";
 import {saveData} from "./ObjectUtil";
 import {isEqualObject} from "./ObjectUtil";
-import  {deepmerge} from "./MergeDeep"
-import deepmerge_1 from "deepmerge"
+import {mergeBigObject} from "./ObjectUtil";
 // 竟然 名称来有后缀!!
 
 export const MIME = {
@@ -51,7 +50,7 @@ export function doGET(request, response) {
           response.writeHead(500, {
             'Content-Type': 'text/plain'
           });
-          response.end(err);
+          response.end("");
         } else {
           let ext = path.extname(realPath);
           ext = ext ? ext.slice(1) : 'json';
@@ -112,7 +111,7 @@ export function doPOST(request, response) {
     }
     // 注意  Object.assign([1,2],[3,4])  ==>[3,4]不能合并
     // let mergeObject = Object.assign(oriObject, newObject)
-    let mergeObject = deepmerge_1(oriObject, newObject)
+    let mergeObject = mergeBigObject(oriObject, newObject)
     //deepmerge_1({},{})
     try {
       //缓存下来.
