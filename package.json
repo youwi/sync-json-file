@@ -1,14 +1,24 @@
 {
   "name": "sync-a-file",
+  "repository": "https://github.com/youwi/sync-json-file",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start":"rollup -c && node SyncServer",
+    "build": "rollup -c"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "iso-whatwg-fetch": "^1.0.1"
+    "deepmerge": "^2.1.0",
+    "iso-whatwg-fetch": "^1.0.1",
+    "merge-deep": "^3.0.1"
+  },
+  "main":"dist/SyncServer.dist.js",
+  "module":"dist/SyncServer.es6.js",
+  "devDependencies": {
+    "rollup-plugin-commonjs": "^9.1.0",
+    "rollup-plugin-node-resolve": "^3.3.0"
   }
 }

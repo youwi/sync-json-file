@@ -1,9 +1,7 @@
-'use strict';
-
-var fs = require('fs');
-var path = require('path');
-var url = require('url');
-var http = require('http');
+import { exists, readFile, mkdir, writeFile, readFileSync } from 'fs';
+import { join, extname } from 'path';
+import { parse } from 'url';
+import { createServer } from 'http';
 
 /**
  * 判断对象是否相等
@@ -43,7 +41,7 @@ function every5secondTask() {
   for (let name in OBJ) {
     let startTime = new Date();
     // 这里磁盘IO瞬间上升, 不要用于生产环境!容易奔溃的.
-    fs.writeFile(name, OBJ[name].content, (err) => {
+    writeFile(name, OBJ[name].content, (err) => {
       let endTime = new Date();
       let spendTime = endTime.getTime() - startTime.getTime();
       console.log("save file " + name + ",time spend:" + spendTime + "ms," + formatDateTime(endTime));
@@ -109,11 +107,11 @@ const MIME = {
 };
 
 function doGET(request, response) {
-  var pathname = url.parse(request.url).pathname;
-  var realPath = path.join("data", pathname) + ".json";
+  var pathname = parse(request.url).pathname;
+  var realPath = join("data", pathname) + ".json";
 
-  fs.exists(realPath, function (exists) {
-    if (!exists) {
+  exists(realPath, function (exists$$1) {
+    if (!exists$$1) {
       response.writeHead(404, {
         'Content-Type': 'application/json'
       });
@@ -121,14 +119,14 @@ function doGET(request, response) {
       response.write("This request URL " + pathname + " was not found on this server.");
       response.end();
     } else {
-      fs.readFile(realPath, "binary", function (err, file) {
+      readFile(realPath, "binary", function (err, file) {
         if (err) {
           response.writeHead(500, {
             'Content-Type': 'text/plain'
           });
           response.end(err);
         } else {
-          var ext = path.extname(realPath);
+          var ext = extname(realPath);
           ext = ext ? ext.slice(1) : 'json';
           var contentType = MIME[ext] || "text/plain";
           response.writeHead(200, {
@@ -154,25 +152,25 @@ const MEM_OBJECTS = {};
  * @param response
  */
 function doPOST(request, response) {
-  var pathname = url.parse(request.url).pathname;
-  var realPath = path.join("data", pathname);
+  var pathname = parse(request.url).pathname;
+  var realPath = join("data", pathname);
   var post = '';
   request.on('data', (chunk) => {
     post += chunk;
   });
   request.on('end', () => {
     //将字符串变为json的格式
-    fs.exists("data", (exist) => {
-      if (!exist) fs.mkdir("data");
-      fs.exists(realPath + ".json", (fileexist) => {
-        if (!fileexist) fs.writeFile(realPath + ".json", "{}", (e) => {
+    exists("data", (exist) => {
+      if (!exist) mkdir("data");
+      exists(realPath + ".json", (fileexist) => {
+        if (!fileexist) writeFile(realPath + ".json", "{}", (e) => {
           e && console.log(e);
         });
       });
     });
     var oriObject = MEM_OBJECTS[realPath];
     try {
-      if (oriObject == null) oriObject = JSON.parse(fs.readFileSync(realPath + ".json"));
+      if (oriObject == null) oriObject = JSON.parse(readFileSync(realPath + ".json"));
     } catch (e) {
       console.log(e);
       oriObject = {};
@@ -216,7 +214,7 @@ const PORT = 8101;
 //
 // const path = require('path');
 
-const server = http.createServer(function (request, response) {
+const server = createServer(function (request, response) {
 
   if (request.method === "GET") {
     doGET(request, response);
