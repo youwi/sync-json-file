@@ -193,7 +193,7 @@ function every5secondTask(){
   SAVE_DATA_TASK_LIST.length=0 ;// = []
   for (var name in OBJ) {
     var startTime = new Date()
-
+    // 这里磁盘IO瞬间上升, 不要用于生产环境!容易奔溃的.
     fs.writeFile(name, OBJ[name].content, (err) => {
       var endTime=new Date()
       var spendTime=endTime.getTime()-startTime.getTime()
