@@ -27,8 +27,10 @@
 目前由于代码调整.src统一使用mjs. 暂没有配置webpack
 
     ./src/*.mjs  #源代码,未来能直接运行
-    ./dist/SyncServer.dist.js  # Web包装的代码
+    ./dist/SyncServer.dist.js  # Web包装的代码,不能运行
+    ./dist/SyncServer.es6.js  # nodejs未来会支持运行.
     ./SyncServer.js  #nodejs 可以运行的代码.
+    
 
     
 默认端口 8101

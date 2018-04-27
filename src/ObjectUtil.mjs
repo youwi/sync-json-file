@@ -98,7 +98,9 @@ export function deleteObject(oriArray, smallArray) {
   Object.keys(dictSmall).map(id => delete dict[id]);
   return Object.values(dict)
 }
-
+export function mergeObject() {
+  
+}
 /**
  * build dict for array
  * exmple

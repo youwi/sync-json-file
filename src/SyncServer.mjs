@@ -2,7 +2,7 @@ import * as http from "http";
 
 //const http=require("http")
 import {doPOST, doGET, doDelete} from "./HttpHander";
-import {every5secondTask} from "./objectUtil";
+import {every5secondTask} from "./ObjectUtil";
 
 const PORT = 8101;
 

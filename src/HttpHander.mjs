@@ -6,8 +6,11 @@
 import * as path from "path";
 import * as url from "url";
 import * as fs from "fs";
-import {saveData} from "./objectUtil";
-import {isEqualObject} from "./objectUtil";
+import {saveData} from "./ObjectUtil";
+import {isEqualObject} from "./ObjectUtil";
+import  {deepmerge} from "./MergeDeep"
+import deepmerge_1 from "deepmerge"
+// 竟然 名称来有后缀!!
 
 export const MIME = {
   "css": "text/css",
@@ -31,8 +34,8 @@ export const MIME = {
 };
 
 export function doGET(request, response) {
-  var pathname = url.parse(request.url).pathname;
-  var realPath = path.join("data", pathname) + ".json";
+  let pathname = url.parse(request.url).pathname;
+  let realPath = path.join("data", pathname) + ".json";
 
   fs.exists(realPath, function (exists) {
     if (!exists) {
@@ -50,9 +53,9 @@ export function doGET(request, response) {
           });
           response.end(err);
         } else {
-          var ext = path.extname(realPath);
+          let ext = path.extname(realPath);
           ext = ext ? ext.slice(1) : 'json';
-          var contentType = MIME[ext] || "text/plain";
+          let contentType = MIME[ext] || "text/plain";
           response.writeHead(200, {
             'Content-Type': contentType
           });
@@ -76,9 +79,9 @@ const MEM_OBJECTS = {}
  * @param response
  */
 export function doPOST(request, response) {
-  var pathname = url.parse(request.url).pathname;
-  var realPath = path.join("data", pathname);
-  var post = '';
+  let pathname = url.parse(request.url).pathname;
+  let realPath = path.join("data", pathname);
+  let post = '';
   request.on('data', (chunk) => {
     post += chunk;
   });
@@ -86,13 +89,13 @@ export function doPOST(request, response) {
     //将字符串变为json的格式
     fs.exists("data", (exist) => {
       if (!exist) fs.mkdir("data")
-      fs.exists(realPath + ".json", (fileexist) => {
-        if (!fileexist) fs.writeFile(realPath + ".json", "{}", (e) => {
+      fs.exists(realPath + ".json", (fileExist) => {
+        if (!fileExist) fs.writeFile(realPath + ".json", "{}", (e) => {
           e && console.log(e)
         })
       })
     })
-    var oriObject = MEM_OBJECTS[realPath]
+    let oriObject = MEM_OBJECTS[realPath]
     try {
       if (oriObject == null) oriObject = JSON.parse(fs.readFileSync(realPath + ".json"))
     } catch (e) {
@@ -100,15 +103,17 @@ export function doPOST(request, response) {
       oriObject = {}
     }
     const backObject = Object.assign({}, oriObject);
+    let newObject = {}
     try {
-      var newObject = JSON.parse(post)
+      newObject = JSON.parse(post)
     } catch (e) {
       console.log(e)
       console.log("maybe not json")
-      newObject = {}
     }
     // 注意  Object.assign([1,2],[3,4])  ==>[3,4]不能合并
-    var mergeObject = Object.assign(oriObject, newObject)
+    // let mergeObject = Object.assign(oriObject, newObject)
+    let mergeObject = deepmerge_1(oriObject, newObject)
+    //deepmerge_1({},{})
     try {
       //缓存下来.
       //需要优化,降低文件写入
