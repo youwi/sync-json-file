@@ -9,7 +9,10 @@
 - 超级轻量级,一个脚本可用.
 - 内存缓存
 ### 生产环境
- 不要使用这个工具到生产环境,建议使用mongodb的http接口:如http://python-eve.org/
+ 不要使用这个工具到生产环境,建议使用mongodb的http接口:
+ - EVE  http://python-eve.org/
+ - nedb https://github.com/louischatriot/nedb
+ 
 #### 
 
 ### 原则
